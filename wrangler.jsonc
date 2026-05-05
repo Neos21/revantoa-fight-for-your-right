@@ -16,6 +16,9 @@
     }
   ],
   "preview_urls": false,
+  "triggers": {
+    "crons": ["0 0 * * *"]
+  },
   "observability": {
     "enabled": true,
     "logs": {

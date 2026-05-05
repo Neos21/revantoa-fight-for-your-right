@@ -54,18 +54,34 @@
 ## D1 SQLite データベース
 
 ```bash
-# D1 データベースを作成する
 $ wrangler d1 create fight-for-your-right
 
-# ローカルとリモートを指定して SQL を実行する
-$ wrangler d1 execute fight-for-your-right --local  --command='SELECT * FROM posts'
-$ wrangler d1 execute fight-for-your-right --remote --command='SELECT * FROM posts'
-$ wrangler d1 execute fight-for-your-right --local  --file='./schema.sql'
-$ wrangler d1 execute fight-for-your-right --remote --file='./schema.sql'
+# テーブルを確認する
+$ wrangler d1 execute fight-for-your-right --local  --command='SELECT * FROM achievements'
+$ wrangler d1 execute fight-for-your-right --remote --command='SELECT * FROM achievements'
 
-# インデックス一覧を確認する
+# SQL ファイルを実行する場合
+# $ wrangler d1 execute fight-for-your-right --local  --file='./schema.sql'
+# $ wrangler d1 execute fight-for-your-right --remote --file='./schema.sql'
+
+# インデックスを確認する
 $ wrangler d1 execute fight-for-your-right --local  --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
 $ wrangler d1 execute fight-for-your-right --remote --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
+```
+
+- SQL 定義は README 内で管理する。`schema.sql` は作成しない
+
+```sql
+CREATE TABLE IF NOT EXISTS achievements (
+  id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
+  instruction  TEXT     NOT NULL,
+  user_name    TEXT,
+  user_ip      TEXT     NOT NULL,
+  created_at   TEXT     NOT NULL,
+  status       TEXT     NOT NULL     DEFAULT '未送信' CHECK(status IN ('未送信', '既読', '達成', 'スキップ', 'キャンセル')),
+  updated_at   TEXT     NOT NULL,
+  admin_memo   TEXT
+);
 ```
 
 - `achievements` テーブル
@@ -77,6 +93,14 @@ $ wrangler d1 execute fight-for-your-right --remote --command='SELECT * FROM sql
     - `status` : 達成状況 (未送信 or 既読 or 達成 or スキップ or キャンセル)
     - `updated_at` : Discord Bot が送信した日時、もしくは達成 or スキップ or キャンセルした日時
     - `admin_memo` : 管理者メモ (任意入力)
+- `status` の意味
+    - `未送信` : 指示が投稿された直後の状態
+    - `既読` : Discord Bot がその指示を送信した時に、同時にこの値へ DB 更新する
+    - `達成` : 指示を達成した状態
+    - `スキップ` : その日だけスキップした状態。翌日以降の候補には含める
+    - `キャンセル` : 達成不可能、または実行しない状態
+- `スキップ` の翌日以降復帰判定には `updated_at` を使う
+- `updated_at` は履歴用に分割しない
 
 
 ## シークレット
@@ -87,6 +111,51 @@ $ wrangler d1 execute fight-for-your-right --remote --command='SELECT * FROM sql
 ```bash
 $ echo 'VALUE' | wrangler secret put 【Secret 名】 --name fight-for-your-right
 ```
+
+- `ADMIN_PASSWORD` : 管理ページのログイン用パスワード
+- `ADMIN_JWT_SECRET` : 管理 API 用 JWT 署名シークレット
+- `TURNSTILE_SITE_KEY` : Cloudflare Turnstile の Site Key
+- `TURNSTILE_SECRET_KEY` : Cloudflare Turnstile の Secret Key
+- `DISCORD_PUBLIC_KEY` : Discord Interactions API の署名検証用 Public Key
+- `DISCORD_BOT_TOKEN` : Discord Bot Token
+- `DISCORD_APPLICATION_ID` : Discord Application ID
+- `DISCORD_USER_ID` : DM 送信先の Discord User ID
+- `DISCORD_CHANNEL_ID` : DM が難しい場合の専用チャンネル ID
+
+
+## Turnstile
+
+- 投稿フォームには Cloudflare Turnstile を置く
+- フロントエンドでは `TURNSTILE_SITE_KEY` を使用する
+- バックエンドでは `TURNSTILE_SECRET_KEY` を使用して `https://challenges.cloudflare.com/turnstile/v0/siteverify` を検証する
+
+
+## Discord Bot
+
+- Discord Developer Portal で Application を作成する
+- Bot を作成し、`DISCORD_BOT_TOKEN` を Cloudflare Workers Secret に登録する
+- General Information の Application ID を `DISCORD_APPLICATION_ID` として登録する
+- General Information の Public Key を `DISCORD_PUBLIC_KEY` として登録する
+- Interactions Endpoint URL に `https://fight-for-your-right.revantoa.workers.dev/discord/interactions` を設定する
+- 送信先は Bot との DM 相当を第一候補とする
+- DM が Discord API や権限の都合で難しい場合は、Bot とやり取りする専用チャンネルを作成し、`DISCORD_CHANNEL_ID` を使用する
+- Bot との DM 送信には `DISCORD_USER_ID` を使用する
+- `DISCORD_USER_ID` が未設定の場合は `DISCORD_CHANNEL_ID` に送信する
+- スラッシュコマンドは Discord API で登録する
+    - `/達成` : `id` (必須・整数), `memo` (任意・文字列)
+    - `/スキップ` : `id` (必須・整数), `memo` (任意・文字列)
+    - `/キャンセル` : `id` (必須・整数), `memo` (任意・文字列)
+- Interactions API は `X-Signature-Ed25519` と `X-Signature-Timestamp` を `DISCORD_PUBLIC_KEY` で署名検証する
+- Discord Bot が送信するボタンは `達成` / `スキップ` / `キャンセル`
+- `スキップ` 操作時は対象の `status` を `スキップ` に更新し、別の候補を再送信する
+
+
+## Cron Triggers
+
+- Cloudflare Workers の Cron Triggers で Discord Bot 送信処理を定時実行する
+- `wrangler.jsonc` の `triggers.crons` で毎日 `0 0 * * *` UTC に実行する
+    - 日本時間では毎日 09:00
+- 候補が存在しない場合の目標自動生成は TODO とし、初期実装では最小限の挙動に留める
 
 
 ## Links
