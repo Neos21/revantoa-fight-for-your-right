@@ -1,0 +1,13 @@
+{
+  "name": "Fight For Your Right",
+  "short_name": "Fight For Your Right",
+  "lang": "ja",
+  "theme_color": "#ff0099",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "https://fight-for-your-right.revantoa.workers.dev",
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}

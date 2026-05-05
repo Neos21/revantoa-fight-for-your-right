@@ -1,0 +1,12 @@
+html {
+  height: 100%;
+  font-family: "M PLUS 1 Code", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  text-decoration-skip-ink: none;
+  word-break: break-all;
+  cursor: default;
+  scrollbar-gutter: stable;
+}
+
+body {
+  height: 100%;
+}
