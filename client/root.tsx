@@ -11,7 +11,7 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
       <head>
         <meta charSet="UTF-8" />
         <title>Fight For Your Right</title>
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#ff0099" />
         <meta name="description" content="Fight For Your Right" />
         <meta name="keywords" content="Fight For Your Right" />
@@ -45,7 +45,7 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
         
         <Links />
         
-        <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token" : "TODO"}' />
+        <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token" : "f448d7f15c19452ebc183af086aa25ec"}' />
       </head>
       <body suppressHydrationWarning>
         {children}
