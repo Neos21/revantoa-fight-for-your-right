@@ -10,16 +10,10 @@
 - エンドユーザ向け Web サイト部分
     - React Router v7 フロントエンド SPA + Hono バックエンド API
     - `/` トップページ : サイトのコンセプト説明、「これやれ」投稿フォーム (指示 : 必須、名前 : 任意)、達成状況一覧
-        - 達成状況一覧 : 投稿された指示一覧と、それぞれの達成状況 … No、指示、投稿者名、登録日、達成状況 (未送信 or 既読 or 達成 or スキップ or キャンセル)、達成日、メモ、の列を表示する
-        - POST `/api/posts` : フォームの投稿先 API エンドポイント
-        - GET `/api/achievements` : 達成状況一覧を取得する (ページを1画面分スクロールしたら読込開始する)
+        - 達成状況一覧 : 投稿された指示と、それぞれの達成状況 … No、指示、投稿者名、登録日、達成状況 (未送信 or 既読 or 達成 or スキップ or キャンセル)、達成日、メモ、の列を表示する
 - 管理ページ部分 : 管理者1名のみが利用する
-    - `/admin` 管理トップページ : 未ログイン時は管理者パスワードの入力フォーム、ログイン時は達成状況の詳細一覧を表示する
-        - POST `/api/admin/login` : パスワードを検証し、管理用 JWT トークンを発行する
-        - GET `/api/admin/achievements` : 達成状況の一覧
-    - `/admin/achievements/:id` : 指定の1件に対し、投稿された指示と達成状況を編集・削除する詳細ページ
-        - PUT `/api/admin/achievements/:id` : 指定の1件を更新する (理由により達成不可能な目標に対しては「キャンセル」)
-        - DELETE `/api/admin/achievements/:id` : 指定の1件を削除する (荒らしなどの投稿は物理削除する)
+    - `/admin` 管理トップページ : 未ログイン時は管理者パスワードの入力フォーム、ログイン時は達成状況一覧を表示する
+    - `/admin/achievements/:id` : 指定の1件に対し、投稿された指示と達成状況を編集・削除する詳細ページ (理由により達成不可能な目標に対しては「キャンセル」、荒らしなどの投稿は物理削除する)
 - Discord Bot 部分 : 管理者1名のみが利用する
     - 定時実行 : Cloudflare Cron Triggers … 指定の Discord サーバに「指示」を1つ送る
         - 達成していない目標からランダムに1つ抽出する、全て達成している場合は何らかの目標を自動生成する
@@ -36,19 +30,28 @@
 
 ## npm Scripts
 
-| Name           | Description                                                                                                                                                                               |
-|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| dev            | `@react-router/dev` 内の React Router CLI を使用して Vite による開発サーバを起動する・`isbot` パッケージが勝手にインストールされる                                                        |
-| lint           | ESLint を実行して自動修正を行う                                                                                                                                                           |
-| generate-types | Wrangler CLI を使用して `.dev.vars` を参照しつつ Workers が使用する型定義ファイルを `worker-configuration.d.ts` に出力する・React Router CLI を使用して `.react-router/` 型定義を出力する |
-| build          | React Router CLI が Vite を使用して本番ビルドする                                                                                                                                         |
-| build-only     | `npm run build` が `npm run generate-types` と `tsc` の後に実際のビルドを行うのに対して、本コマンドは `react-router build` コマンドのみを実行する                                         |
-| preview        | Vite ビルド後に Wrangler の開発サーバを起動する                                                                                                                                           |
-| preview-only   | ビルド処理をスキップして Wrangler の開発サーバを起動する                                                                                                                                  |
-| deploy         | Vite ビルド後に Cloudflare Workers にデプロイする                                                                                                                                         |
-| deploy-only    | ビルド処理をスキップして Cloudflare Workers にデプロイする                                                                                                                                |
-| tsc            | TypeScript コンパイルチェックを行う                                                                                                                                                       |
-| wrangler       | Wrangler CLI                                                                                                                                                                              |
+- `$ npm run dev`
+    - `@react-router/dev` 内の React Router CLI を使用して Vite による開発サーバを起動する・`isbot` パッケージが勝手にインストールされる
+- `$ npm run lint`
+    - ESLint を実行して自動修正を行う
+- `$ npm run generate-types`
+    - Wrangler CLI を使用して `.dev.vars` を参照しつつ Workers が使用する型定義ファイルを `worker-configuration.d.ts` に出力する・React Router CLI を使用して `.react-router/` 型定義を出力する
+- `$ npm run build`
+    - React Router CLI が Vite を使用して本番ビルドする
+- `$ npm run build-only`
+    - `npm run build` が `npm run generate-types` と `tsc` の後に実際のビルドを行うのに対して、本コマンドは `react-router build` コマンドのみを実行する
+- `$ npm run preview`
+    - Vite ビルド後に Wrangler の開発サーバを起動する
+- `$ npm run preview-only`
+    - ビルド処理をスキップして Wrangler の開発サーバを起動する
+- `$ npm run deploy`
+    - Vite ビルド後に Cloudflare Workers にデプロイする
+- `$ npm run deploy-only`
+    - ビルド処理をスキップして Cloudflare Workers にデプロイする
+- `$ npm run tsc`
+    - TypeScript コンパイルチェックを行う
+- `$ npm run wrangler`
+    - Wrangler CLI
 
 
 ## D1 SQLite データベース
@@ -69,17 +72,15 @@ $ wrangler d1 execute fight-for-your-right --local  --command='SELECT * FROM sql
 $ wrangler d1 execute fight-for-your-right --remote --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
 ```
 
-- SQL 定義は README 内で管理する。`schema.sql` は作成しない
-
 ```sql
 CREATE TABLE IF NOT EXISTS achievements (
   id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
   instruction  TEXT     NOT NULL,
   user_name    TEXT,
   user_ip      TEXT     NOT NULL,
-  created_at   TEXT     NOT NULL,
+  created_at   TEXT     NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   status       TEXT     NOT NULL     DEFAULT '未送信' CHECK(status IN ('未送信', '既読', '達成', 'スキップ', 'キャンセル')),
-  updated_at   TEXT     NOT NULL,
+  updated_at   TEXT     NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   admin_memo   TEXT
 );
 ```
@@ -100,7 +101,6 @@ CREATE TABLE IF NOT EXISTS achievements (
     - `スキップ` : その日だけスキップした状態。翌日以降の候補には含める
     - `キャンセル` : 達成不可能、または実行しない状態
 - `スキップ` の翌日以降復帰判定には `updated_at` を使う
-- `updated_at` は履歴用に分割しない
 
 
 ## シークレット
@@ -112,22 +112,14 @@ CREATE TABLE IF NOT EXISTS achievements (
 $ echo 'VALUE' | wrangler secret put 【Secret 名】 --name fight-for-your-right
 ```
 
+- `TURNSTILE_SECRET_KEY` : Cloudflare Turnstile の Secret Key
 - `ADMIN_PASSWORD` : 管理ページのログイン用パスワード
 - `ADMIN_JWT_SECRET` : 管理 API 用 JWT 署名シークレット
-- `TURNSTILE_SITE_KEY` : Cloudflare Turnstile の Site Key
-- `TURNSTILE_SECRET_KEY` : Cloudflare Turnstile の Secret Key
 - `DISCORD_PUBLIC_KEY` : Discord Interactions API の署名検証用 Public Key
 - `DISCORD_BOT_TOKEN` : Discord Bot Token
 - `DISCORD_APPLICATION_ID` : Discord Application ID
 - `DISCORD_USER_ID` : DM 送信先の Discord User ID
 - `DISCORD_CHANNEL_ID` : DM が難しい場合の専用チャンネル ID
-
-
-## Turnstile
-
-- 投稿フォームには Cloudflare Turnstile を置く
-- フロントエンドでは `TURNSTILE_SITE_KEY` を使用する
-- バックエンドでは `TURNSTILE_SECRET_KEY` を使用して `https://challenges.cloudflare.com/turnstile/v0/siteverify` を検証する
 
 
 ## Discord Bot
@@ -153,9 +145,7 @@ $ echo 'VALUE' | wrangler secret put 【Secret 名】 --name fight-for-your-righ
 ## Cron Triggers
 
 - Cloudflare Workers の Cron Triggers で Discord Bot 送信処理を定時実行する
-- `wrangler.jsonc` の `triggers.crons` で毎日 `0 0 * * *` UTC に実行する
-    - 日本時間では毎日 09:00
-- 候補が存在しない場合の目標自動生成は TODO とし、初期実装では最小限の挙動に留める
+- `wrangler.jsonc` の `triggers.crons` で毎日 `0 0 * * *` UTC (JST 09:00) に実行する
 
 
 ## Links

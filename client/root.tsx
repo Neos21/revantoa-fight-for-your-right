@@ -1,6 +1,8 @@
 import { type ReactElement, type ReactNode } from 'react';
 import { isRouteErrorResponse, Links, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
+import { isEmpty } from '../shared/helpers/is-empty';
+
 import type { Route } from './+types/root';
 
 import './styles.css';
@@ -72,13 +74,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactElement
       title = '404';
       text  = 'ページが見つかりませんでした';
     }
-    if(error.statusText != null && error.statusText !== '') text = error.statusText;
+    if(!isEmpty(error.statusText)) text = error.statusText;
   }
   
   return (
-    <div>
+    <>
       <h1>{title}</h1>
       <p>{text}</p>
-    </div>
+    </>
   );
 }

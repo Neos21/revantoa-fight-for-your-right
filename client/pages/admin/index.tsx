@@ -1,163 +1,132 @@
-import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
+import ky, { isHTTPError } from 'ky';
+import { useEffect, useState, type ReactElement, type SubmitEvent } from 'react';
 import { Link } from 'react-router';
 
-import { createAdminApi } from '../../lib/admin-api';
-import { useAdminAuthStore } from '../../lib/admin-auth-store';
-import { api, readApiError } from '../../lib/api';
+import { createAdminApi } from './helpers/admin-api';
+import { useAdminAuthStore } from './helpers/admin-auth-store';
+import { convertUtcToJst } from '../../../shared/helpers/convert-utc-to-jst';
+import { isEmpty } from '../../../shared/helpers/is-empty';
 
-import type { AchievementListResponse, AdminAchievement } from '../../lib/types';
-
-type LoginResponse = {
-  token: string;
-};
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(new Date(value));
-}
+import type { AdminAchievement } from '../../../shared/types/achievement';
 
 export default function AdminIndex(): ReactElement {
-  const token = useAdminAuthStore((state) => state.token);
-  const setToken = useAdminAuthStore((state) => state.setToken);
-  const logout = useAdminAuthStore((state) => state.logout);
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [achievements, setAchievements] = useState<AdminAchievement[]>([]);
-  const [nextCursor, setNextCursor] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [listError, setListError] = useState('');
+  const token    = useAdminAuthStore(state => state.token);
+  const setToken = useAdminAuthStore(state => state.setToken);
+  const logout   = useAdminAuthStore(state => state.logout);
+  
+  const [loginForm, setLoginForm] = useState<{ password: string; turnstileToken: string; }>({ password: '', turnstileToken: '' });
+  const [loginError, setLoginError] = useState<string>('');
+  
+  const [achievements, setAchievements] = useState<Array<AdminAchievement>>([]);
   
   useEffect(() => {
-    if(token == null) return;
-    void loadAchievements(null, token);
+    if(isEmpty(token)) return;
+    
+    (async () => {
+      try {
+        const result = await createAdminApi(token!).get('/api/admin/achievements').json<{ result: Array<AdminAchievement> }>();
+        setAchievements(result.result);
+      }
+      catch(error) {
+        console.error('達成状況一覧が読み込めませんでした', error);
+        setAchievements([]);
+        
+        if(isHTTPError(error) && error.response.status === 401) logout();
+      }
+    })();
   }, [token]);
   
-  async function onLogin(event: FormEvent<HTMLFormElement>): Promise<void> {
+  const onLogin = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-    setIsLoggingIn(true);
     setLoginError('');
     
     try {
-      const response = await api.post('api/admin/login', {
-        json: { password }
-      }).json<LoginResponse>();
-      setToken(response.token);
-      setPassword('');
+      const response = await ky.post('/api/admin/login', {
+        json: {
+          password       : loginForm.password,
+          turnstile_token: loginForm.turnstileToken
+        }
+      }).json<{ result: { admin_jwt: string; }; }>();
+      setToken(response.result.admin_jwt);
     }
     catch(error) {
-      setLoginError(await readApiError(error));
+      console.error('ログインに失敗しました', error);
+      setLoginError('ログインに失敗しました');
     }
-    finally {
-      setIsLoggingIn(false);
-    }
-  }
-  
-  async function loadAchievements(cursor: number | null, activeToken = token): Promise<void> {
-    if(activeToken == null) return;
-    setIsLoading(true);
-    setListError('');
-    
-    try {
-      const response = await createAdminApi(activeToken).get('api/admin/achievements', {
-        searchParams: cursor == null ? undefined : { cursor: String(cursor) }
-      }).json<AchievementListResponse>();
-      
-      setAchievements((current) => cursor == null ? response.items : [...current, ...response.items]);
-      setNextCursor(response.nextCursor);
-    }
-    catch(error) {
-      setListError(await readApiError(error));
-    }
-    finally {
-      setIsLoading(false);
-    }
-  }
-  
-  if(token == null) {
-    return (
-      <main className="admin-shell compact">
-        <section className="admin-panel">
-          <p className="eyebrow">Admin</p>
-          <h1>管理ログイン</h1>
-          <form className="post-form" onSubmit={onLogin}>
-            <label>
-              <span>パスワード</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.currentTarget.value)}
-                autoComplete="current-password"
-              />
-            </label>
-            <button type="submit" disabled={password === '' || isLoggingIn}>
-              {isLoggingIn ? '確認中' : 'ログイン'}
-            </button>
-            {loginError !== '' && <p className="form-message error">{loginError}</p>}
-          </form>
-        </section>
-      </main>
-    );
-  }
+  };
   
   return (
-    <main className="admin-shell">
-      <section className="admin-heading">
-        <div>
-          <p className="eyebrow">Admin</p>
-          <h1>達成状況管理</h1>
-        </div>
-        <button type="button" onClick={logout}>ログアウト</button>
-      </section>
-      
-      {listError !== '' && <p className="form-message error">{listError}</p>}
-      {achievements.length === 0 && !isLoading && listError === '' && <p className="muted">まだ投稿はありません。</p>}
-      
-      {achievements.length > 0 && (
-        <div className="achievement-table-wrap">
-          <table className="achievement-table">
-            <thead>
-              <tr>
-                <th>No</th>
-                <th>指示</th>
-                <th>投稿者名</th>
-                <th>IP</th>
-                <th>登録日</th>
-                <th>状態</th>
-                <th>更新日</th>
-                <th>メモ</th>
-                <th>詳細</th>
-              </tr>
-            </thead>
-            <tbody>
-              {achievements.map((achievement) => (
-                <tr key={achievement.id}>
-                  <td>{achievement.id}</td>
-                  <td>{achievement.instruction}</td>
-                  <td>{achievement.user_name ?? '名無し'}</td>
-                  <td>{achievement.user_ip}</td>
-                  <td>{formatDate(achievement.created_at)}</td>
-                  <td>{achievement.status}</td>
-                  <td>{formatDate(achievement.updated_at)}</td>
-                  <td>{achievement.admin_memo ?? '-'}</td>
-                  <td><Link to={`/admin/achievements/${achievement.id}`}>開く</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <main className="admin-page">
+      {isEmpty(token) && (
+        <>
+          <h1>Admin</h1>
+          <form onSubmit={onLogin}>
+            <p>
+              <input
+                type="password"
+                value={loginForm.password}
+                onChange={event => setLoginForm(prevLoginForm => ({ ...prevLoginForm, password: event.currentTarget.value }))}
+                placeholder="Password"
+                autoComplete="current-password"
+              />
+            </p>
+            <p className="turnstile">
+              <Turnstile
+                siteKey="0x4AAAAAADJfnedS0W-AbwSN"
+                onSuccess={token => setLoginForm(prevLoginForm => ({ ...prevLoginForm, turnstileToken: token }))}
+                onError={() => setLoginForm(prevLoginForm => ({ ...prevLoginForm, turnstileToken: '' }))}
+                onExpire={() => setLoginForm(prevLoginForm => ({ ...prevLoginForm, turnstileToken: '' }))}
+              />
+            </p>
+            <p>
+              <button type="submit" disabled={isEmpty(loginForm.password) || isEmpty(loginForm.turnstileToken)}>Login</button>
+            </p>
+            {!isEmpty(loginError) && (<p className="text-error">{loginError}</p>)}
+          </form>
+        </>
       )}
       
-      {isLoading && <p className="muted">読み込み中です。</p>}
-      
-      {nextCursor != null && !isLoading && (
-        <button className="secondary-button" type="button" onClick={() => void loadAchievements(nextCursor)}>
-          もっと見る
-        </button>
+      {!isEmpty(token) && (
+        <>
+          <h1>Admin Dashboard</h1>
+          <p><button type="button" onClick={logout}>Logout</button></p>
+          
+          {achievements.length === 0 && (<p>達成状況はありません</p>)}
+          {achievements.length > 0 && (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>指示</th>
+                    <th>投稿者名</th>
+                    <th>IP</th>
+                    <th>登録日時</th>
+                    <th>ステータス</th>
+                    <th>更新日時</th>
+                    <th>メモ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {achievements.map(achievement => (
+                    <tr key={achievement.id}>
+                      <td><Link to={`/admin/achievements/${achievement.id}`}>{achievement.id}</Link></td>
+                      <td>{achievement.instruction}</td>
+                      <td>{achievement.user_name ?? '-'}</td>
+                      <td>{achievement.user_ip}</td>
+                      <td>{convertUtcToJst(achievement.created_at)}</td>
+                      <td>{achievement.status}</td>
+                      <td>{convertUtcToJst(achievement.updated_at)}</td>
+                      <td>{achievement.admin_memo ?? '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </main>
   );
 }
-

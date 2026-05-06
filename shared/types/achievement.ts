@@ -1,8 +1,7 @@
 export const achievementStatuses = ['未送信', '既読', '達成', 'スキップ', 'キャンセル'] as const;
-
 export type AchievementStatus = typeof achievementStatuses[number];
 
-export type AdminAchievement = {
+type Achievement = {
   id: number;
   instruction: string;
   user_name: string | null;
@@ -13,8 +12,6 @@ export type AdminAchievement = {
   admin_memo: string | null;
 };
 
-export type AchievementListResponse = {
-  items: AdminAchievement[];
-  nextCursor: number | null;
-};
+export type PublicAchievement = Pick<Achievement, 'id' | 'instruction' | 'user_name' | 'created_at' | 'status' | 'updated_at' | 'admin_memo'>;
 
+export type AdminAchievement = Achievement;

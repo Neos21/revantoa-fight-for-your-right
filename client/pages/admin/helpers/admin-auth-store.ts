@@ -3,14 +3,16 @@ import { persist } from 'zustand/middleware';
 
 type AdminAuthState = {
   token: string | null;
+  
   setToken: (token: string) => void;
   logout: () => void;
 };
 
 export const useAdminAuthStore = create<AdminAuthState>()(
   persist(
-    (set) => ({
+    set => ({
       token: null,
+      
       setToken: (token): void => {
         set({ token });
       },
