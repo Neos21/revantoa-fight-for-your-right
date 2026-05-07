@@ -1,5 +1,3 @@
-import { isEmpty } from '../../shared/helpers/is-empty';
-
 import type { AdminAchievement } from '../../shared/types/achievement';
 
 export type DiscordInteraction = {
@@ -42,7 +40,8 @@ const interactionType = {
 const interactionResponseType = {
   pong: 1,
   channelMessageWithSource: 4,
-  deferredUpdateMessage: 6
+  deferredUpdateMessage: 6,  // NOTE : 現状未使用
+  updateMessage: 7
 } as const;
 
 const actionStatuses = {
@@ -151,53 +150,48 @@ export class DiscordService {
       
       if(parsed == null) return {
         type: interactionResponseType.channelMessageWithSource,
-        data: {
-          content: `対象の操作を判別できなかった。 : Custom ID [${interaction.data?.custom_id}]`,
-          flags: 64
-        }
+        data: { content: `対象の操作を判別できなかった。 : Custom ID [${interaction.data?.custom_id}]` }
       };
       
       try {
         await this.db.prepare('UPDATE achievements SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[parsed.action], parsed.id).run();
         
-        if(parsed.action === 'skip') {
-          await this.sendNextInstruction();
+        if(parsed.action === 'skip') await this.sendNextInstruction();
+        
+        if(interaction.message != null) {
+          await this.callDiscord<{ id: string; }>(`/channels/${interaction.channel_id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({ content: `ID [${parsed.id}] を ${actionStatuses[parsed.action]} に更新した。ボタンは非活性にした。` })
+          }).catch(error => console.warn(error));
+          
+          // 元メッセージのボタンを非活性に編集更新する
+          const updatedMessageBody = {
+            content: interaction.message.content,
+            components: interaction.message.components?.map(row => ({
+              ...row,
+              components: row.components.map(button => ({
+                ...button,
+                disabled: true
+              }))
+            })) || []
+          };
+          return {
+            type: interactionResponseType.updateMessage,
+            data: updatedMessageBody
+          };
         }
         else {
-          // 元メッセージのボタンを非活性に編集更新する
-          if(interaction.message != null && !isEmpty(interaction.application_id) && !isEmpty(interaction.token)) {
-            const updatedMessageBody = {
-              content: interaction.message.content,
-              components: interaction.message.components?.map(row => ({
-                ...row,
-                components: row.components.map(button => ({
-                  ...button,
-                  disabled: true
-                }))
-              })) || []
-            };
-            await this.callDiscord(`/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
-              method: 'PATCH',
-              body: JSON.stringify(updatedMessageBody)
-            });
-          }
+          // 元メッセージの編集ができなさそうだったので返信のみとする
+          return {
+            type: interactionResponseType.channelMessageWithSource,
+            data: { content: `ID [${parsed.id}] を ${actionStatuses[parsed.action]} に更新した。` }
+          };
         }
-        
-        return {
-          type: interactionResponseType.channelMessageWithSource,
-          data: {
-            content: `ID [${parsed.id}] を ${actionStatuses[parsed.action]} に更新した。`,
-            flags: 64
-          }
-        };
       }
       catch(error) {
         return {
           type: interactionResponseType.channelMessageWithSource,
-          data: {
-            content: `操作に失敗した。 : ${error instanceof Error ? error.message : '(不明なエラー)'}`,
-            flags: 64
-          }
+          data: { content: `操作に失敗した。 : ${error instanceof Error ? error.message : '(不明なエラー)'}` }
         };
       }
     }
@@ -210,10 +204,7 @@ export class DiscordService {
       
       if(action == null || !Number.isInteger(id) || id <= 0) return {
         type: interactionResponseType.channelMessageWithSource,
-        data: {
-          content: 'コマンドの内容がおかしいみたい。',
-          flags: 64
-        }
+        data: { content: 'コマンドの内容がおかしいみたい。' }
       };
       
       try {
@@ -223,29 +214,20 @@ export class DiscordService {
         
         return {
           type: interactionResponseType.channelMessageWithSource,
-          data: {
-            content: `コマンドを受け付けた。ID [${id}] を ${actionStatuses[action]} に更新した。`,
-            flags: 64
-          }
+          data: { content: `コマンドを受け付けた。ID [${id}] を ${actionStatuses[action]} に更新した。` }
         };
       }
       catch(error) {
         return {
           type: interactionResponseType.channelMessageWithSource,
-          data: {
-            content: `コマンドを受け付けたが操作に失敗した。 : ${error instanceof Error ? error.message : '(不明なエラー)'}`,
-            flags: 64
-          }
+          data: { content: `コマンドを受け付けたが操作に失敗した。 : ${error instanceof Error ? error.message : '(不明なエラー)'}` }
         };
       }
     }
     
     return {
       type: interactionResponseType.channelMessageWithSource,
-      data: {
-        content: '未対応の操作だ。',
-        flags: 64
-      }
+      data: { content: '未対応の操作だ。' }
     };
   }
   
