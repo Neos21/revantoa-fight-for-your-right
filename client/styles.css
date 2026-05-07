@@ -161,7 +161,7 @@ table {
     
     & table tbody tr td:nth-child(2) { min-width: 15rem; }
     & table tbody tr td:nth-child(3) { max-width: 10rem; }
-    & table tbody tr td:nth-child(7) { min-width:  8rem; }
+    & table tbody tr td:nth-child(6) { min-width: 10rem; }
   }
 }
 
@@ -172,7 +172,6 @@ table {
       align-items: start;
       gap: 2rem;
       padding-top: 3rem;
-      background: linear-gradient(135deg, rgba(255, 239, 248, .94), rgba(255, 255, 255, .86));
     }
   }
 }

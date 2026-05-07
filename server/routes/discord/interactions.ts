@@ -18,5 +18,6 @@ discordInteractionsApi.post('/', async context => {
   if(!isValid) return new Response('Invalid Request Signature', { status: 401 });
   
   const interaction = JSON.parse(body) as DiscordInteraction;
-  return discordService.handleInteraction(interaction);
+  const responseObject = await discordService.handleInteraction(interaction);
+  return context.json(responseObject);
 });

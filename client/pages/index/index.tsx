@@ -99,7 +99,7 @@ export default function Index(): ReactElement {
         <div className="info">
           <h1 className="nowrap">これやれ</h1>
           <p>東京在住・35歳の休職中エンジニアが、復職に向けた体力作りを主目的として、皆さまからの指示を何でも受け付けます。</p>
-          <p>投稿された指示は Discord で私に通知され、実行状況は以下に公表します。</p>
+          <p>投稿された指示は Discord で私に通知され、達成状況は以下に公表します。</p>
         </div>
         
         <form className="form" onSubmit={onSubmit}>
@@ -166,7 +166,6 @@ export default function Index(): ReactElement {
                   <th>投稿者名</th>
                   <th>登録日</th>
                   <th>達成状況</th>
-                  <th>達成日</th>
                   <th>メモ</th>
                 </tr>
               </thead>
@@ -176,10 +175,8 @@ export default function Index(): ReactElement {
                     <td className="nowrap">{achievement.id}</td>
                     <td className="pre-wrap">{achievement.instruction}</td>
                     <td>{achievement.user_name || '-'}</td>
-                    <td className="nowrap">{convertUtcToJst(achievement.created_at, true)}</td>
-                    {/* TODO : ステータスと日付の表示をオシャレにしたい */}
-                    <td className="nowrap">{achievement.status}</td>
-                    <td className="nowrap">{achievement.status === '達成' ? convertUtcToJst(achievement.updated_at, true) : '-'}</td>
+                    <td className="nowrap" title={convertUtcToJst(achievement.created_at)}>{convertUtcToJst(achievement.created_at, true)}</td>
+                    <td className={`nowrap ${achievement.status === '達成' ? 'text-success' : ['キャンセル', 'スキップ'].includes(achievement.status) ? 'text-error' : ''}`} title={convertUtcToJst(achievement.updated_at)}>{achievement.status === '未送信' ? '-' : convertUtcToJst(achievement.updated_at, true) + ' ' + achievement.status}</td>
                     <td className="pre-wrap">{achievement.admin_memo || '-'}</td>
                   </tr>
                 ))}

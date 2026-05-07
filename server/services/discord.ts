@@ -1,3 +1,5 @@
+import { isEmpty } from '../../shared/helpers/is-empty';
+
 import type { AdminAchievement } from '../../shared/types/achievement';
 
 export type DiscordInteraction = {
@@ -8,6 +10,25 @@ export type DiscordInteraction = {
     options?: Array<{
       name: string;
       value: string | number;
+    }>;
+  };
+  id: string;
+  application_id: string;
+  token: string;
+  channel_id: string;
+  message?: {
+    id: string;
+    channel_id: string;
+    content: string;
+    components?: Array<{
+      type: 1;
+      components: Array<{
+        type: 2;
+        style: number;
+        label: string;
+        custom_id: string;
+        disabled?: boolean;
+      }>;
     }>;
   };
 };
@@ -66,12 +87,9 @@ export class DiscordService {
     });
     
     if(achievement == null) {
-      // TODO : 現状は「やることなし」とメッセージを送っているが、何らかやることを自動生成する仕組みを設けたい
-      const messageBody = { content: `${todayString} の指示なし。やることを探すこと` };
-      
       const message = await this.callDiscord<{ id: string; }>(`/channels/${channel.id}/messages`, {
         method: 'POST',
-        body: JSON.stringify(messageBody)
+        body: JSON.stringify({ content: `${todayString} の指示がなかった。やることを探すこと` })
       });
       return message;
     }
@@ -104,7 +122,6 @@ export class DiscordService {
           }
         ]
       };
-      
       const message = await this.callDiscord<{ id: string; }>(`/channels/${channel.id}/messages`, {
         method: 'POST',
         body: JSON.stringify(messageBody)
@@ -124,59 +141,112 @@ export class DiscordService {
     return await crypto.subtle.verify('Ed25519', key, this.hexToBytes(signature), payload);
   }
   
-  public async handleInteraction(interaction: DiscordInteraction): Promise<Response> {
-    if(interaction.type === interactionType.ping) return Response.json({ type: interactionResponseType.pong });
+  public async handleInteraction(interaction: DiscordInteraction): Promise<any> {  // eslint-disable-line @typescript-eslint/no-explicit-any
+    // NOTE : Interactions API には通常のチャットメッセージがそもそも届かないのでココに到達することもない
+    if(interaction.type === interactionType.ping) return { type: interactionResponseType.pong };
     
+    // ボタン押下時の反応
     if(interaction.type === interactionType.messageComponent) {
       const parsed = this.parseButtonAction(interaction.data?.custom_id);
       
-      // TODO : Discord メッセージとしても返信したい
-      if(parsed == null) return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: '対象の操作を判別できませんでした', flags: 64 } });
+      if(parsed == null) return {
+        type: interactionResponseType.channelMessageWithSource,
+        data: {
+          content: `対象の操作を判別できなかった。 : Custom ID [${interaction.data?.custom_id}]`,
+          flags: 64
+        }
+      };
       
       try {
         await this.db.prepare('UPDATE achievements SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[parsed.action], parsed.id).run();
-        if(parsed.action === 'skip') await this.sendNextInstruction();
-        // TODO : Skip 時はメッセージが送信されるので、それ以外の場合も Discord メッセージとして返信をしたい
-        // TODO : 押されたボタンがあるメッセージ自体を編集し、ボタンを非表示や非活性にしたい
-        return Response.json({ type: interactionResponseType.deferredUpdateMessage });
+        
+        if(parsed.action === 'skip') {
+          await this.sendNextInstruction();
+        }
+        else {
+          // 元メッセージのボタンを非活性に編集更新する
+          if(interaction.message != null && !isEmpty(interaction.application_id) && !isEmpty(interaction.token)) {
+            const updatedMessageBody = {
+              content: interaction.message.content,
+              components: interaction.message.components?.map(row => ({
+                ...row,
+                components: row.components.map(button => ({
+                  ...button,
+                  disabled: true
+                }))
+              })) || []
+            };
+            await this.callDiscord(`/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+              method: 'PATCH',
+              body: JSON.stringify(updatedMessageBody)
+            });
+          }
+        }
+        
+        return {
+          type: interactionResponseType.channelMessageWithSource,
+          data: {
+            content: `ID [${parsed.id}] を ${actionStatuses[parsed.action]} に更新した。`,
+            flags: 64
+          }
+        };
       }
       catch(error) {
-        // TODO : Discord メッセージとしても返信したい
-        return Response.json({
+        return {
           type: interactionResponseType.channelMessageWithSource,
-          data: { content: error instanceof Error ? error.message : '操作に失敗しました', flags: 64 }
-        });
+          data: {
+            content: `操作に失敗した。 : ${error instanceof Error ? error.message : '(不明なエラー)'}`,
+            flags: 64
+          }
+        };
       }
     }
     
+    // スラッシュコマンド受付時
     if(interaction.type === interactionType.applicationCommand) {
       const action = this.parseCommandAction(interaction.data?.name);
       const id = Number(this.getOption(interaction, 'id'));
       const memo = String(this.getOption(interaction, 'memo') || '');
       
-      // TODO : Discord メッセージとしても返信したい
-      if(action == null || !Number.isInteger(id) || id <= 0) return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: 'コマンドの内容を確認してください', flags: 64 } });
+      if(action == null || !Number.isInteger(id) || id <= 0) return {
+        type: interactionResponseType.channelMessageWithSource,
+        data: {
+          content: 'コマンドの内容がおかしいみたい。',
+          flags: 64
+        }
+      };
       
       try {
         await this.db.prepare('UPDATE achievements SET status = ?, admin_memo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[action], memo || null, id).run();
+        
         if(action === 'skip') await this.sendNextInstruction();
-        // TODO : Skip 時はメッセージが送信されるので、それ以外の場合も Discord メッセージとして返信をしたい
-        return Response.json({
+        
+        return {
           type: interactionResponseType.channelMessageWithSource,
-          data: { content: `[ID ${id}] を ${actionStatuses[action]} にしました`, flags: 64 }
-        });
+          data: {
+            content: `コマンドを受け付けた。ID [${id}] を ${actionStatuses[action]} に更新した。`,
+            flags: 64
+          }
+        };
       }
       catch(error) {
-        // TODO : Discord メッセージとしても返信したい
-        return Response.json({
+        return {
           type: interactionResponseType.channelMessageWithSource,
-          data: { content: error instanceof Error ? error.message : '操作に失敗しました', flags: 64 }
-        });
+          data: {
+            content: `コマンドを受け付けたが操作に失敗した。 : ${error instanceof Error ? error.message : '(不明なエラー)'}`,
+            flags: 64
+          }
+        };
       }
     }
     
-    // TODO : Discord メッセージとしても返信したい
-    return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: '未対応の操作です', flags: 64 } });
+    return {
+      type: interactionResponseType.channelMessageWithSource,
+      data: {
+        content: '未対応の操作だ。',
+        flags: 64
+      }
+    };
   }
   
   private async callDiscord<T>(path: string, requestInit: RequestInit): Promise<T> {

@@ -113,13 +113,13 @@ export default function AdminIndex(): ReactElement {
                   {achievements.map(achievement => (
                     <tr key={achievement.id}>
                       <td className="nowrap"><Link to={`/admin/achievements/${achievement.id}`}>{achievement.id}</Link></td>
-                      <td className="pre-wrap">{achievement.instruction}</td>
-                      <td>{achievement.user_name || '-'}</td>
-                      <td>{achievement.user_ip}</td>
+                      <td className="pre-wrap" style={{ minWidth: '15rem' }}>{achievement.instruction}</td>
+                      <td style={{ maxWidth: '10rem' }}>{achievement.user_name || '-'}</td>
+                      <td style={{ minWidth: '8rem' }}>{achievement.user_ip}</td>
                       <td className="nowrap">{convertUtcToJst(achievement.created_at)}</td>
                       <td className="nowrap">{achievement.status}</td>
                       <td className="nowrap">{convertUtcToJst(achievement.updated_at)}</td>
-                      <td className="pre-wrap">{achievement.admin_memo || '-'}</td>
+                      <td className="pre-wrap" style={{ minWidth: '10rem' }}>{achievement.admin_memo || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
