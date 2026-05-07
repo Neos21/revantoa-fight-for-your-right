@@ -177,6 +177,7 @@ export default function Index(): ReactElement {
                     <td className="pre-wrap">{achievement.instruction}</td>
                     <td>{achievement.user_name || '-'}</td>
                     <td className="nowrap">{convertUtcToJst(achievement.created_at, true)}</td>
+                    {/* TODO : ステータスと日付の表示をオシャレにしたい */}
                     <td className="nowrap">{achievement.status}</td>
                     <td className="nowrap">{achievement.status === '達成' ? convertUtcToJst(achievement.updated_at, true) : '-'}</td>
                     <td className="pre-wrap">{achievement.admin_memo || '-'}</td>

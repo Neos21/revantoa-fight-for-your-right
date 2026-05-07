@@ -66,6 +66,7 @@ export class DiscordService {
     });
     
     if(achievement == null) {
+      // TODO : 現状は「やることなし」とメッセージを送っているが、何らかやることを自動生成する仕組みを設けたい
       const messageBody = { content: `${todayString} の指示なし。やることを探すこと` };
       
       const message = await this.callDiscord<{ id: string; }>(`/channels/${channel.id}/messages`, {
@@ -128,20 +129,24 @@ export class DiscordService {
     
     if(interaction.type === interactionType.messageComponent) {
       const parsed = this.parseButtonAction(interaction.data?.custom_id);
+      
+      // TODO : Discord メッセージとしても返信したい
       if(parsed == null) return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: '対象の操作を判別できませんでした', flags: 64 } });
       
       try {
         await this.db.prepare('UPDATE achievements SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[parsed.action], parsed.id).run();
         if(parsed.action === 'skip') await this.sendNextInstruction();
+        // TODO : Skip 時はメッセージが送信されるので、それ以外の場合も Discord メッセージとして返信をしたい
+        // TODO : 押されたボタンがあるメッセージ自体を編集し、ボタンを非表示や非活性にしたい
+        return Response.json({ type: interactionResponseType.deferredUpdateMessage });
       }
       catch(error) {
+        // TODO : Discord メッセージとしても返信したい
         return Response.json({
           type: interactionResponseType.channelMessageWithSource,
           data: { content: error instanceof Error ? error.message : '操作に失敗しました', flags: 64 }
         });
       }
-      
-      return Response.json({ type: interactionResponseType.deferredUpdateMessage });
     }
     
     if(interaction.type === interactionType.applicationCommand) {
@@ -149,25 +154,28 @@ export class DiscordService {
       const id = Number(this.getOption(interaction, 'id'));
       const memo = String(this.getOption(interaction, 'memo') || '');
       
+      // TODO : Discord メッセージとしても返信したい
       if(action == null || !Number.isInteger(id) || id <= 0) return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: 'コマンドの内容を確認してください', flags: 64 } });
       
       try {
         await this.db.prepare('UPDATE achievements SET status = ?, admin_memo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[action], memo || null, id).run();
         if(action === 'skip') await this.sendNextInstruction();
+        // TODO : Skip 時はメッセージが送信されるので、それ以外の場合も Discord メッセージとして返信をしたい
+        return Response.json({
+          type: interactionResponseType.channelMessageWithSource,
+          data: { content: `[ID ${id}] を ${actionStatuses[action]} にしました`, flags: 64 }
+        });
       }
       catch(error) {
+        // TODO : Discord メッセージとしても返信したい
         return Response.json({
           type: interactionResponseType.channelMessageWithSource,
           data: { content: error instanceof Error ? error.message : '操作に失敗しました', flags: 64 }
         });
       }
-      
-      return Response.json({
-        type: interactionResponseType.channelMessageWithSource,
-        data: { content: `[ID ${id}] を ${actionStatuses[action]} にしました`, flags: 64 }
-      });
     }
     
+    // TODO : Discord メッセージとしても返信したい
     return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: '未対応の操作です', flags: 64 } });
   }
   

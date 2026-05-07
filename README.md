@@ -135,8 +135,8 @@ $ echo 'VALUE' | wrangler secret put 【Secret 名】 --name fight-for-your-righ
 1. Discord Developer Portal の対象 Application で、左メニューの `Bot` を開く
 2. `Add Bot` をクリックする (既に Bot が存在する場合、この手順は不要)
 3. `Token` の `Reset Token` をクリックして Bot Token を発行する
-4. 発行された Token をコピーする
-    - この値が `DISCORD_BOT_TOKEN`
+4. 発行された Bot Token をコピーする
+    - この値が `DISCORD_BOT_TOKEN` となる
     - Bot Token は一度閉じると再表示できないため、コピーし忘れた場合は再度 `Reset Token` する
 5. コピーした値を `DISCORD_BOT_TOKEN` として Cloudflare Workers Secret に登録する
 
@@ -145,7 +145,7 @@ $ echo 'VALUE' | wrangler secret put 【Secret 名】 --name fight-for-your-righ
 1. Discord アプリを開く
 2. `ユーザー設定` → `詳細設定` → `開発者モード` を有効にする
 3. DM 送信先にしたい自分のユーザーを右クリックする
-4. `ユーザーIDをコピー` をクリックする
+4. `ユーザー ID をコピー` をクリックする
 5. コピーした数値を `DISCORD_USER_ID` として Cloudflare Workers Secret に登録する
 
 ### Bot のインストール
@@ -194,8 +194,8 @@ DM 上でスラッシュコマンドを実行する場合は、Bot と送信先�
     - `integration_types` は `0` がサーバインストール
 
 ```bash
-$ export DISCORD_APPLICATION_ID='General Information の Application ID'
-$ export DISCORD_BOT_TOKEN='Bot ページで発行した Token'
+$ export DISCORD_APPLICATION_ID='【General Information の Application ID】'
+$ export DISCORD_BOT_TOKEN='【Bot ページで発行した Token】'
 
 $ curl -X PUT "https://discord.com/api/v10/applications/${DISCORD_APPLICATION_ID}/commands" \
   -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
@@ -271,8 +271,8 @@ $ curl -X PUT "https://discord.com/api/v10/applications/${DISCORD_APPLICATION_ID
 
 - 送信先は Bot との DM 相当を第一候補とする
 - Bot との DM 送信には `DISCORD_USER_ID` を使用する
-- Discord Bot が送信するボタンは `達成` / `スキップ` / `キャンセル`
-- `スキップ` 操作時は対象の `status` を `スキップ` に更新し、別の候補を再送信する
+- Discord Bot が送信するボタンは `達成`・`スキップ`・`キャンセル`
+- `スキップ` 操作時は対象の `achievements.status` を `スキップ` に更新し、別の候補を再送信する
 
 
 ## Cron Triggers
