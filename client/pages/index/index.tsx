@@ -21,7 +21,7 @@ export default function Index(): ReactElement {
   
   const [shouldLoadAchievements, setShouldLoadAchievements] = useState<boolean>(false);
   const [isLoadingAchievements, setIsLoadingAchievements] = useState<boolean>(false);
-  const [achievements, setAchievements] = useState<Array<PublicAchievement>>([]);
+  const [achievements, setAchievements] = useState<Array<PublicAchievement> | null>(null);
   
   useEffect(() => {
     const onScroll = (): void => {
@@ -34,12 +34,15 @@ export default function Index(): ReactElement {
   }, []);
   
   useEffect(() => {
-    if(!shouldLoadAchievements || isLoadingAchievements || achievements.length > 0) return;
-    loadAchievements();
-  }, [shouldLoadAchievements, isLoadingAchievements, achievements.length]);
+    if(!shouldLoadAchievements || isLoadingAchievements || achievements != null) return;
+    (async () => {
+      setIsLoadingAchievements(true);
+      await loadAchievements();
+      setIsLoadingAchievements(false);
+    })();
+  }, [shouldLoadAchievements, isLoadingAchievements, achievements]);
   
   const loadAchievements = async (): Promise<void> => {
-    setIsLoadingAchievements(true);
     try {
       const response = await ky.get('/api/achievements').json<{ result: Array<PublicAchievement>; }>();
       setAchievements(response.result);
@@ -48,12 +51,9 @@ export default function Index(): ReactElement {
       console.error('達成状況一覧が読み込めませんでした', error);
       setAchievements([]);
     }
-    finally {
-      setIsLoadingAchievements(false);
-    }
   };
   
-  const canSubmit = useMemo(() => isEmpty(form.instruction) && isEmpty(form.turnstile_token) && formSubmitState !== 'SUBMITTING', [form, formSubmitState]);
+  const canSubmit = useMemo(() => !isEmpty(form.instruction) && !isEmpty(form.turnstile_token) && formSubmitState !== 'SUBMITTING', [form, formSubmitState]);
   
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -97,7 +97,7 @@ export default function Index(): ReactElement {
     <main className="index-page">
       <section className="intro">
         <div className="info">
-          <h1>これやれ</h1>
+          <h1 className="nowrap">これやれ</h1>
           <p>東京在住・35歳の休職中エンジニアが、復職に向けた体力作りを主目的として、皆さまからの指示を何でも受け付けます。</p>
           <p>投稿された指示は Discord で私に通知され、実行状況は以下に公表します。</p>
         </div>
@@ -110,7 +110,7 @@ export default function Index(): ReactElement {
               rows={6}
               maxLength={instructionMaxLength}
               value={form.instruction}
-              onChange={event => setForm(prevForm => ({ ...prevForm, instruction: event.currentTarget.value }))}
+              onChange={event => setForm(prevForm => ({ ...prevForm, instruction: event.target.value }))}
               onBlur={() => setShowTurnstile(true)}
               placeholder="例 : 知らない道を20分歩いて写真を1枚撮ってくる"
             />
@@ -121,7 +121,7 @@ export default function Index(): ReactElement {
             <input
               maxLength={userNameMaxLength}
               value={form.user_name}
-              onChange={event => setForm(prevForm => ({ ...prevForm, user_name: event.currentTarget.value }))}
+              onChange={event => setForm(prevForm => ({ ...prevForm, user_name: event.target.value }))}
               onBlur={() => setShowTurnstile(true)}
               placeholder="名無しでも可"
             />
@@ -143,7 +143,7 @@ export default function Index(): ReactElement {
             {formSubmitState === 'SUBMITTING' ? '送信中' : '投稿する'}
           </button>
           
-          {formSubmitState === 'SUCCEEDED' && (<p className="text-success">投稿しました</p>)}
+          {formSubmitState === 'SUCCEEDED' && (<p className="text-muted">投稿しました</p>)}
           {formSubmitState === 'FAILED'    && (<p className="text-error">{formError}</p>)}
         </form>
       </section>
@@ -152,11 +152,11 @@ export default function Index(): ReactElement {
         <h2>達成状況</h2>
         
         {!shouldLoadAchievements && (<p className="text-muted">もう少しスクロールすると読み込みます</p>)}
-        {isLoadingAchievements && (<p className="text-muted">読み込み中…</p>)}
+        {shouldLoadAchievements && isLoadingAchievements && (<p className="text-muted">読み込み中…</p>)}
         
-        {shouldLoadAchievements && !isLoadingAchievements && achievements.length === 0 && (<p className="text-muted">まだ投稿された指示はありません</p>)}
+        {achievements != null && achievements.length === 0 && (<p className="text-muted">まだ投稿された指示はありません</p>)}
         
-        {achievements.length > 0 && (
+        {achievements != null && achievements.length > 0 && (
           <div className="table-wrap">
             <table>
               <thead>
@@ -173,13 +173,13 @@ export default function Index(): ReactElement {
               <tbody>
                 {achievements.map(achievement => (
                   <tr key={achievement.id}>
-                    <td>{achievement.id}</td>
-                    <td>{achievement.instruction}</td>
-                    <td>{achievement.user_name ?? '-'}</td>
-                    <td>{convertUtcToJst(achievement.created_at)}</td>
-                    <td>{achievement.status}</td>
-                    <td>{achievement.status === '達成' ? convertUtcToJst(achievement.updated_at, true) : '-'}</td>
-                    <td>{achievement.admin_memo ?? '-'}</td>
+                    <td className="nowrap">{achievement.id}</td>
+                    <td className="pre-wrap">{achievement.instruction}</td>
+                    <td>{achievement.user_name || '-'}</td>
+                    <td className="nowrap">{convertUtcToJst(achievement.created_at, true)}</td>
+                    <td className="nowrap">{achievement.status}</td>
+                    <td className="nowrap">{achievement.status === '達成' ? convertUtcToJst(achievement.updated_at, true) : '-'}</td>
+                    <td className="pre-wrap">{achievement.admin_memo || '-'}</td>
                   </tr>
                 ))}
               </tbody>

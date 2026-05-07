@@ -39,7 +39,7 @@ button {
   }
 }
 
-input, textarea {
+input, textarea, select {
   width: 100%;
   border: 1px solid #e4bdcf;
   border-radius: 8px;
@@ -67,12 +67,17 @@ table {
     color: #5a3c4b;
     background: #fff3f9;
   }
+  thead th {
+    white-space: nowrap;
+  }
   tr:last-child td {
     border-bottom: 0;
   }
 
 
 /* Classes */
+
+.turnstile { height: 65px; }
 
 .text-muted   { color: #765d6c; }
 .text-success { color: #0a6f3c; }
@@ -84,9 +89,8 @@ table {
   border-radius: 8px;
 }
 
-.turnstile {
-  min-height: 65px;
-}
+.nowrap   { white-space: nowrap;   }
+.pre-wrap { white-space: pre-wrap; }
 
 
 /* Index Page */
@@ -154,10 +158,14 @@ table {
       margin: 0 0 1.5rem;
       font-size: clamp(2rem, 5vw, 4rem);
     }
+    
+    & table tbody tr td:nth-child(2) { min-width: 15rem; }
+    & table tbody tr td:nth-child(3) { max-width: 10rem; }
+    & table tbody tr td:nth-child(7) { min-width:  8rem; }
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .index-page {
     & .intro {
       grid-template-columns: 1fr;
@@ -167,4 +175,8 @@ table {
       background: linear-gradient(135deg, rgba(255, 239, 248, .94), rgba(255, 255, 255, .86));
     }
   }
+}
+
+.error-page, .admin-page, .admin-achievement-page {
+  padding: 1rem;
 }

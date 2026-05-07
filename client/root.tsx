@@ -12,23 +12,23 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
     <html lang="ja">
       <head>
         <meta charSet="UTF-8" />
-        <title>Fight For Your Right</title>
+        <title>これやれ</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#ff0099" />
         <meta name="description" content="Fight For Your Right" />
-        <meta name="keywords" content="Fight For Your Right" />
+        <meta name="keywords" content="これやれ, Fight For Your Right" />
         <meta name="robots" content="index, follow" />
         
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Fight For Your Right" />
-        <meta property="og:title" content="Fight For Your Right" />
+        <meta property="og:site_name" content="これやれ" />
+        <meta property="og:title" content="これやれ" />
         <meta property="og:description" content="Fight For Your Right" />
         <meta property="og:url" content="https://fight-for-your-right.revantoa.workers.dev" />
         <meta property="og:image" content="https://fight-for-your-right.revantoa.workers.dev/icon-512.png" />
         <meta property="og:locale" content="ja_JP" />
         
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:title" content="Fight For Your Right" />
+        <meta property="twitter:title" content="これやれ" />
         <meta property="twitter:description" content="Fight For Your Right" />
         <meta property="twitter:url" content="https://fight-for-your-right.revantoa.workers.dev" />
         <meta property="twitter:image" content="https://fight-for-your-right.revantoa.workers.dev/icon-512.png" />
@@ -78,9 +78,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactElement
   }
   
   return (
-    <>
+    <div className="error-page">
       <h1>{title}</h1>
       <p>{text}</p>
-    </>
+    </div>
   );
 }

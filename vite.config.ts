@@ -8,7 +8,7 @@ export default defineConfig({
     reactRouter(),
     serverAdapter({
       adapter: cloudflareAdapter,
-      entry: './server/index.ts'
+      entry: './server/app.ts'  // NOTE : For Vite Entrypoint
     })
   ],
   build: {

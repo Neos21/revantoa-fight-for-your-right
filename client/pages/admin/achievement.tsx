@@ -17,6 +17,7 @@ export default function AdminAchievementDetail(): ReactElement {
   const logout = useAdminAuthStore(state => state.logout);
   
   const [achievement, setAchievement] = useState<AdminAchievement | null>(null);
+  const [succeeded, setSucceeded] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function AdminAchievementDetail(): ReactElement {
   
   const onEdit = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
+    setSucceeded(false);
     
     const parsed = updateAchievementSchema.safeParse(achievement);
     if(!parsed.success) return setError(mergeIssues(parsed.error));
@@ -49,6 +51,7 @@ export default function AdminAchievementDetail(): ReactElement {
     try {
       const result = await createAdminApi(token!).put(`/api/admin/achievements/${id}`, { json: achievement }).json<{ result: AdminAchievement; }>();
       setAchievement(result.result);
+      setSucceeded(true);
     }
     catch(error) {
       console.error('達成状況の更新に失敗しました', error);
@@ -95,7 +98,7 @@ export default function AdminAchievementDetail(): ReactElement {
               rows={6}
               maxLength={instructionMaxLength}
               value={achievement.instruction}
-              onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, instruction: event.currentTarget.value }))}
+              onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, instruction: event.target.value }))}
               placeholder="指示"
             />
           </p>
@@ -104,13 +107,13 @@ export default function AdminAchievementDetail(): ReactElement {
             <input
               maxLength={userNameMaxLength}
               value={achievement.user_name ?? ''}
-              onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, user_name: event.currentTarget.value }))}
+              onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, user_name: event.target.value }))}
               placeholder="投稿者名"
             />
           </p>
           
           <p>
-            <select value={achievement.status} onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, status: event.currentTarget.value as AchievementStatus }))}>
+            <select value={achievement.status} onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, status: event.target.value as AchievementStatus }))}>
               {achievementStatuses.map(item => (
                 <option key={item} value={item}>{item}</option>
               ))}
@@ -122,7 +125,7 @@ export default function AdminAchievementDetail(): ReactElement {
               rows={5}
               maxLength={2000}
               value={achievement.admin_memo ?? ''}
-              onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, admin_memo: event.currentTarget.value }))}
+              onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, admin_memo: event.target.value }))}
             />
           </p>
           
@@ -132,9 +135,10 @@ export default function AdminAchievementDetail(): ReactElement {
           <p>
             <button type="button" onClick={onDelete}>削除する</button>
           </p>
-          {!isEmpty(error) && (<p className="text-error">{error}</p>)}
+          {succeeded && (<p className="text-success">更新しました</p>)}
         </form>
       )}
+      {!isEmpty(error) && (<p className="text-error">{error}</p>)}
     </main>
   );
 }

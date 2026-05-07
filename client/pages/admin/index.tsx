@@ -66,7 +66,7 @@ export default function AdminIndex(): ReactElement {
               <input
                 type="password"
                 value={loginForm.password}
-                onChange={event => setLoginForm(prevLoginForm => ({ ...prevLoginForm, password: event.currentTarget.value }))}
+                onChange={event => setLoginForm(prevLoginForm => ({ ...prevLoginForm, password: event.target.value }))}
                 placeholder="Password"
                 autoComplete="current-password"
               />
@@ -112,14 +112,14 @@ export default function AdminIndex(): ReactElement {
                 <tbody>
                   {achievements.map(achievement => (
                     <tr key={achievement.id}>
-                      <td><Link to={`/admin/achievements/${achievement.id}`}>{achievement.id}</Link></td>
-                      <td>{achievement.instruction}</td>
-                      <td>{achievement.user_name ?? '-'}</td>
+                      <td className="nowrap"><Link to={`/admin/achievements/${achievement.id}`}>{achievement.id}</Link></td>
+                      <td className="pre-wrap">{achievement.instruction}</td>
+                      <td>{achievement.user_name || '-'}</td>
                       <td>{achievement.user_ip}</td>
-                      <td>{convertUtcToJst(achievement.created_at)}</td>
-                      <td>{achievement.status}</td>
-                      <td>{convertUtcToJst(achievement.updated_at)}</td>
-                      <td>{achievement.admin_memo ?? '-'}</td>
+                      <td className="nowrap">{convertUtcToJst(achievement.created_at)}</td>
+                      <td className="nowrap">{achievement.status}</td>
+                      <td className="nowrap">{convertUtcToJst(achievement.updated_at)}</td>
+                      <td className="pre-wrap">{achievement.admin_memo || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

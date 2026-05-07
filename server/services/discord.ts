@@ -109,7 +109,7 @@ export class DiscordService {
         body: JSON.stringify(messageBody)
       });
       
-      await this.db.prepare('UPDATE achievements SET status = \'既読\' SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(achievement.id).run();
+      await this.db.prepare('UPDATE achievements SET status = \'既読\', updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(achievement.id).run();
       
       return message;
     }
@@ -131,7 +131,7 @@ export class DiscordService {
       if(parsed == null) return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: '対象の操作を判別できませんでした', flags: 64 } });
       
       try {
-        await this.db.prepare('UPDATE achievements SET status = ? SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[parsed.action], parsed.id).run();
+        await this.db.prepare('UPDATE achievements SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[parsed.action], parsed.id).run();
         if(parsed.action === 'skip') await this.sendNextInstruction();
       }
       catch(error) {
@@ -152,7 +152,7 @@ export class DiscordService {
       if(action == null || !Number.isInteger(id) || id <= 0) return Response.json({ type: interactionResponseType.channelMessageWithSource, data: { content: 'コマンドの内容を確認してください', flags: 64 } });
       
       try {
-        await this.db.prepare('UPDATE achievements SET status = ? SET admin_memo = ? SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[action], memo || null, id).run();
+        await this.db.prepare('UPDATE achievements SET status = ?, admin_memo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(actionStatuses[action], memo || null, id).run();
         if(action === 'skip') await this.sendNextInstruction();
       }
       catch(error) {
