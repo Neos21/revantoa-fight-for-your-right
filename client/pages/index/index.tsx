@@ -2,19 +2,22 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import ky from 'ky';
 import { useEffect, useMemo, useState, type ReactElement, type SubmitEvent } from 'react';
 
+import { mergeIssues } from '../../../server/helpers/merge-issues';
 import { convertUtcToJst } from '../../../shared/helpers/convert-utc-to-jst';
 import { isEmpty } from '../../../shared/helpers/is-empty';
-import { instructionMaxLength, userNameMaxLength } from '../../../shared/schemas/achievement';
+import { instructionMaxLength, newAchievementSchema, userNameMaxLength } from '../../../shared/schemas/achievement';
 
 import type { PublicAchievement } from '../../../shared/types/achievement';
 
 export default function Index(): ReactElement {
-  const [form, setForm] = useState<{ instruction: string; userName: string; turnstileToken: string; }>({
-    instruction   : '',
-    userName      : '',
-    turnstileToken: ''
+  const [form, setForm] = useState<{ instruction: string; user_name: string; turnstile_token: string; }>({
+    instruction    : '',
+    user_name      : '',
+    turnstile_token: ''
   });
   const [formSubmitState, setFormSubmitState] = useState<'IDLE' | 'SUBMITTING' | 'SUCCEEDED' | 'FAILED'>('IDLE');
+  const [showTurnstile, setShowTurnstile] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string>('');
   
   const [shouldLoadAchievements, setShouldLoadAchievements] = useState<boolean>(false);
   const [isLoadingAchievements, setIsLoadingAchievements] = useState<boolean>(false);
@@ -22,8 +25,7 @@ export default function Index(): ReactElement {
   
   useEffect(() => {
     const onScroll = (): void => {
-      // TODO : ココの判定が微妙かも
-      if(window.scrollY >= window.innerHeight) setShouldLoadAchievements(true);
+      if(window.scrollY >= (window.innerHeight / 3)) setShouldLoadAchievements(true);
     };
     
     onScroll();
@@ -51,31 +53,43 @@ export default function Index(): ReactElement {
     }
   };
   
-  const canSubmit = useMemo(() => isEmpty(form.instruction) && isEmpty(form.turnstileToken) && formSubmitState !== 'SUBMITTING', [form, formSubmitState]);
+  const canSubmit = useMemo(() => isEmpty(form.instruction) && isEmpty(form.turnstile_token) && formSubmitState !== 'SUBMITTING', [form, formSubmitState]);
   
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     if(!canSubmit) return;
     
-    // TODO : Zod Validation
-    
     setFormSubmitState('SUBMITTING');
+    setFormError('');
+    
+    const parsed = newAchievementSchema.safeParse(form);
+    if(!parsed.success) {
+      setFormError(mergeIssues(parsed.error));
+      setFormSubmitState('FAILED');
+      return;
+    }
+    
     try {
       await ky.post('/api/achievements', {
         json: {
           instruction    : form.instruction.trim(),
-          user_name      : form.userName.trim(),
-          turnstile_token: form.turnstileToken
+          user_name      : form.user_name.trim(),
+          turnstile_token: form.turnstile_token
         }
       }).json();
       
-      setForm({ instruction: '', userName: '', turnstileToken: '' });
+      setForm({ instruction: '', user_name: '', turnstile_token: '' });
       setFormSubmitState('SUCCEEDED');
       loadAchievements();
     }
     catch(error) {
       console.error('投稿に失敗しました', error);
+      setFormError('投稿に失敗しました');
       setFormSubmitState('FAILED');
+    }
+    finally {
+      setShowTurnstile(false);
+      setForm(prevForm => ({ ...prevForm, turnstile_token: '' }));
     }
   };
   
@@ -84,7 +98,7 @@ export default function Index(): ReactElement {
       <section className="intro">
         <div className="info">
           <h1>これやれ</h1>
-          <p>東京在住・35歳の休職中エンジニアが、皆さまからの指示を受け付けます。</p>
+          <p>東京在住・35歳の休職中エンジニアが、復職に向けた体力作りを主目的として、皆さまからの指示を何でも受け付けます。</p>
           <p>投稿された指示は Discord で私に通知され、実行状況は以下に公表します。</p>
         </div>
         
@@ -97,7 +111,8 @@ export default function Index(): ReactElement {
               maxLength={instructionMaxLength}
               value={form.instruction}
               onChange={event => setForm(prevForm => ({ ...prevForm, instruction: event.currentTarget.value }))}
-              placeholder="例 : 知らない道を20分歩いてくる"
+              onBlur={() => setShowTurnstile(true)}
+              placeholder="例 : 知らない道を20分歩いて写真を1枚撮ってくる"
             />
           </label>
           
@@ -105,37 +120,41 @@ export default function Index(): ReactElement {
             <span>名前 (任意)</span>
             <input
               maxLength={userNameMaxLength}
-              value={form.userName}
-              onChange={event => setForm(prevForm => ({ ...prevForm, userName: event.currentTarget.value }))}
+              value={form.user_name}
+              onChange={event => setForm(prevForm => ({ ...prevForm, user_name: event.currentTarget.value }))}
+              onBlur={() => setShowTurnstile(true)}
               placeholder="名無しでも可"
             />
           </label>
           
           <div className="turnstile">
-            <Turnstile
-              siteKey="0x4AAAAAADJfnedS0W-AbwSN"
-              onSuccess={token => setForm(prevForm => ({ ...prevForm, turnstileToken: token }))}
-              onError={() => setForm(prevForm => ({ ...prevForm, turnstileToken: '' }))}
-              onExpire={() => setForm(prevForm => ({ ...prevForm, turnstileToken: '' }))}
-            />
+            {showTurnstile && (
+              <Turnstile
+                siteKey="0x4AAAAAADJfnedS0W-AbwSN"
+                options={{ language: 'ja' }}
+                onSuccess={turnstileToken => setForm(prevForm => ({ ...prevForm, turnstile_token: turnstileToken }))}
+                onError={() => setForm(prevForm => ({ ...prevForm, turnstile_token: '' }))}
+                onExpire={() => setForm(prevForm => ({ ...prevForm, turnstile_token: '' }))}
+              />
+            )}
           </div>
           
           <button type="submit" disabled={!canSubmit || formSubmitState === 'SUBMITTING'}>
             {formSubmitState === 'SUBMITTING' ? '送信中' : '投稿する'}
           </button>
           
-          {formSubmitState === 'SUCCEEDED' && <p className="text-success">投稿しました</p>}
-          {formSubmitState === 'FAILED'    && <p className="text-error">投稿に失敗しました</p>}
+          {formSubmitState === 'SUCCEEDED' && (<p className="text-success">投稿しました</p>)}
+          {formSubmitState === 'FAILED'    && (<p className="text-error">{formError}</p>)}
         </form>
       </section>
       
       <section className="achievements">
         <h2>達成状況</h2>
         
-        {!shouldLoadAchievements && <p className="text-muted">もう少しスクロールすると読み込みます</p>}
-        {isLoadingAchievements && <p className="text-muted">読み込み中…</p>}
+        {!shouldLoadAchievements && (<p className="text-muted">もう少しスクロールすると読み込みます</p>)}
+        {isLoadingAchievements && (<p className="text-muted">読み込み中…</p>)}
         
-        {shouldLoadAchievements && !isLoadingAchievements && achievements.length === 0 && <p className="text-muted">まだ投稿された指示はありません</p>}
+        {shouldLoadAchievements && !isLoadingAchievements && achievements.length === 0 && (<p className="text-muted">まだ投稿された指示はありません</p>)}
         
         {achievements.length > 0 && (
           <div className="table-wrap">

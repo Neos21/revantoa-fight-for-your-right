@@ -115,24 +115,19 @@ $ echo 'VALUE' | wrangler secret put 【Secret 名】 --name fight-for-your-righ
 - `TURNSTILE_SECRET_KEY` : Cloudflare Turnstile の Secret Key
 - `ADMIN_PASSWORD` : 管理ページのログイン用パスワード
 - `ADMIN_JWT_SECRET` : 管理 API 用 JWT 署名シークレット
-- `DISCORD_PUBLIC_KEY` : Discord Interactions API の署名検証用 Public Key
 - `DISCORD_BOT_TOKEN` : Discord Bot Token
-- `DISCORD_APPLICATION_ID` : Discord Application ID
 - `DISCORD_USER_ID` : DM 送信先の Discord User ID
-- `DISCORD_CHANNEL_ID` : DM が難しい場合の専用チャンネル ID
+- `DISCORD_PUBLIC_KEY` : Discord Interactions API の署名検証用 Public Key
 
 
 ## Discord Bot
 
-- Discord Developer Portal で Application を作成する
-- Bot を作成し、`DISCORD_BOT_TOKEN` を Cloudflare Workers Secret に登録する
-- General Information の Application ID を `DISCORD_APPLICATION_ID` として登録する
+1. Discord Developer Portal で Application を作成する
+2. Bot を作成し、`DISCORD_BOT_TOKEN` を Cloudflare Workers Secret に登録する
 - General Information の Public Key を `DISCORD_PUBLIC_KEY` として登録する
 - Interactions Endpoint URL に `https://fight-for-your-right.revantoa.workers.dev/discord/interactions` を設定する
 - 送信先は Bot との DM 相当を第一候補とする
-- DM が Discord API や権限の都合で難しい場合は、Bot とやり取りする専用チャンネルを作成し、`DISCORD_CHANNEL_ID` を使用する
 - Bot との DM 送信には `DISCORD_USER_ID` を使用する
-- `DISCORD_USER_ID` が未設定の場合は `DISCORD_CHANNEL_ID` に送信する
 - スラッシュコマンドは Discord API で登録する
     - `/達成` : `id` (必須・整数), `memo` (任意・文字列)
     - `/スキップ` : `id` (必須・整数), `memo` (任意・文字列)

@@ -74,6 +74,7 @@ export default function AdminIndex(): ReactElement {
             <p className="turnstile">
               <Turnstile
                 siteKey="0x4AAAAAADJfnedS0W-AbwSN"
+                options={{ language: 'ja' }}
                 onSuccess={token => setLoginForm(prevLoginForm => ({ ...prevLoginForm, turnstileToken: token }))}
                 onError={() => setLoginForm(prevLoginForm => ({ ...prevLoginForm, turnstileToken: '' }))}
                 onExpire={() => setLoginForm(prevLoginForm => ({ ...prevLoginForm, turnstileToken: '' }))}
