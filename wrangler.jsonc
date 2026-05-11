@@ -15,10 +15,13 @@
       "database_id": "103ed021-fe46-4957-804c-cb0ba45fb1a6"
     }
   ],
-  "preview_urls": false,
+  "ai": {
+    "binding": "AI"
+  },
   "triggers": {
     "crons": ["0 0 * * *"]
   },
+  "preview_urls": false,
   "observability": {
     "enabled": true,
     "logs": {

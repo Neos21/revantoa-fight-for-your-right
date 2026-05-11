@@ -70,5 +70,5 @@ adminAchievementsApi.delete(':id', async context => {  // eslint-disable-line
   if(!parsed.success) return context.json({ error: mergeIssues(parsed.error) }, 400);
   
   await context.env.DB.prepare('DELETE FROM achievements WHERE id = ?').bind(parsed.data.id).run();
-  return context.json({ result: true }, 201);
+  return context.body(null, 204);
 });

@@ -1,6 +1,7 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import ky from 'ky';
 import { useEffect, useMemo, useState, type ReactElement, type SubmitEvent } from 'react';
+import { Link } from 'react-router';
 
 import { mergeIssues } from '../../../server/helpers/merge-issues';
 import { convertUtcToJst } from '../../../shared/helpers/convert-utc-to-jst';
@@ -184,6 +185,8 @@ export default function Index(): ReactElement {
             </table>
           </div>
         )}
+        
+        <Link to="/admin" className="admin-link" tabIndex={-1}>&nbsp;</Link>
       </section>
     </main>
   );

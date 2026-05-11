@@ -1,5 +1,6 @@
 export type HonoBindings = {
   DB: D1Database;
+  AI: Ai;
   
   TURNSTILE_SECRET_KEY: string;
   

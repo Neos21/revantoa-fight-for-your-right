@@ -5,11 +5,12 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { createAdminApi } from './helpers/admin-api';
 import { useAdminAuthStore } from './helpers/admin-auth-store';
 import { mergeIssues } from '../../../server/helpers/merge-issues';
+import { convertUtcToJst } from '../../../shared/helpers/convert-utc-to-jst';
 import { isEmpty } from '../../../shared/helpers/is-empty';
 import { instructionMaxLength, updateAchievementSchema, userNameMaxLength } from '../../../shared/schemas/achievement';
 import { achievementStatuses, type AchievementStatus, type AdminAchievement } from '../../../shared/types/achievement';
 
-export default function AdminAchievementDetail(): ReactElement {
+export default function AdminAchievement(): ReactElement {
   const navigate = useNavigate();
   const { id } = useParams();
   
@@ -62,7 +63,7 @@ export default function AdminAchievementDetail(): ReactElement {
         navigate('/admin');
       }
     }
-  }
+  };
   
   const onDelete = async (): Promise<void> => {
     const confirmed = window.confirm('この投稿を削除します。よろしいですか？');
@@ -81,11 +82,11 @@ export default function AdminAchievementDetail(): ReactElement {
         navigate('/admin');
       }
     }
-  }
+  };
   
   return (
     <main className="admin-achievement-page">
-      <p><Link to="/admin">戻る</Link></p>
+      <p><Link to="/admin">戻る</Link> | <Link to="/">トップ</Link></p>
       
       {isEmpty(token) && (<p>ログインしてください</p>)}
       
@@ -112,6 +113,10 @@ export default function AdminAchievementDetail(): ReactElement {
             />
           </p>
           
+          <p>{convertUtcToJst(achievement.created_at)}</p>
+          
+          <p>{achievement.user_ip}</p>
+          
           <p>
             <select value={achievement.status} onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, status: event.target.value as AchievementStatus }))}>
               {achievementStatuses.map(item => (
@@ -120,12 +125,15 @@ export default function AdminAchievementDetail(): ReactElement {
             </select>
           </p>
           
+          <p>{convertUtcToJst(achievement.updated_at)}</p>
+          
           <p>
             <textarea
               rows={5}
               maxLength={2000}
               value={achievement.admin_memo ?? ''}
               onChange={event => setAchievement(prevAchievement => ({ ...prevAchievement!, admin_memo: event.target.value }))}
+              placeholder="メモ"
             />
           </p>
           

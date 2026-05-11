@@ -61,6 +61,7 @@ export default function AdminIndex(): ReactElement {
       {isEmpty(token) && (
         <>
           <h1>Admin</h1>
+          <p><Link to="/">トップ</Link></p>
           <form onSubmit={onLogin}>
             <p>
               <input
@@ -91,7 +92,7 @@ export default function AdminIndex(): ReactElement {
       {!isEmpty(token) && (
         <>
           <h1>Admin Dashboard</h1>
-          <p><button type="button" onClick={logout}>Logout</button></p>
+          <p><Link to="/admin/ai">AI</Link> | <Link to="/">トップ</Link></p>
           
           {achievements.length === 0 && (<p>達成状況はありません</p>)}
           {achievements.length > 0 && (
@@ -126,6 +127,8 @@ export default function AdminIndex(): ReactElement {
               </table>
             </div>
           )}
+          
+          <p><button type="button" onClick={logout}>Logout</button></p>
         </>
       )}
     </main>

@@ -37,11 +37,6 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@500&amp;display=swap" fetchPriority="high" />
-        <link rel="stylesheet"         href="https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@500&amp;display=swap" fetchPriority="high" />
-        
         <link rel="preconnect" href="https://challenges.cloudflare.com" />
         <link rel="preconnect" href="https://static.cloudflareinsights.com" />
         
