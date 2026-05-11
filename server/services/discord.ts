@@ -1,3 +1,5 @@
+import { InstructionService } from './instruction';
+
 import type { AdminAchievement } from '../../shared/types/achievement';
 
 export type DiscordInteraction = {
@@ -86,9 +88,10 @@ export class DiscordService {
     });
     
     if(achievement == null) {
+      const instruction = new InstructionService().pickRandomInstruction();
       const message = await this.callDiscord<{ id: string; }>(`/channels/${channel.id}/messages`, {
         method: 'POST',
-        body: JSON.stringify({ content: `${todayString} の指示がなかった。やることを探すこと` })
+        body: JSON.stringify({ content: `${todayString} の指示を自動生成した : ${instruction}` })
       });
       return message;
     }

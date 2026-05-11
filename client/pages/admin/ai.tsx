@@ -26,7 +26,7 @@ export default function AdminAi(): ReactElement {
       console.log('AI 呼び出し結果', result);
       setAnswer(result.result.response);
     }
-    catch(error: any) {  // eslint-disable-line
+    catch(error: any) {  // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error('AI の呼び出しに失敗しました', error);
       setError('AI の呼び出しに失敗しました');
       

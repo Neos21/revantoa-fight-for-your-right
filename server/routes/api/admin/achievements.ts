@@ -27,7 +27,7 @@ adminAchievementsApi.get('/', async context => {
   return context.json({ result: result.results }, 200);
 });
 
-adminAchievementsApi.get('/:id', async context => {  // eslint-disable-line
+adminAchievementsApi.get('/:id', async context => {  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
   const parsed = idParamSchema.safeParse(context.req.param());
   if(!parsed.success) return context.json({ error: mergeIssues(parsed.error) }, 400);
   
@@ -41,7 +41,7 @@ adminAchievementsApi.get('/:id', async context => {  // eslint-disable-line
   return context.json({ result: achievement }, 200);
 });
 
-adminAchievementsApi.put(':id', async context => {  // eslint-disable-line
+adminAchievementsApi.put(':id', async context => {  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
   const parsedParams = idParamSchema.safeParse(context.req.param());
   if(!parsedParams.success) return context.json({ error: mergeIssues(parsedParams.error) }, 400);
   
@@ -65,7 +65,7 @@ adminAchievementsApi.put(':id', async context => {  // eslint-disable-line
   return context.json({ result: updatedAchievement }, 200);
 });
 
-adminAchievementsApi.delete(':id', async context => {  // eslint-disable-line
+adminAchievementsApi.delete(':id', async context => {  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
   const parsed = idParamSchema.safeParse(context.req.param());
   if(!parsed.success) return context.json({ error: mergeIssues(parsed.error) }, 400);
   
