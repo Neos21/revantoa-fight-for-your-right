@@ -689,12 +689,12 @@ export class InstructionService {
     return Math.random() < .5 ? this.pickPreparedInstruction() : this.pickInstructionFromTemplate();
   }
   
-  private pickPreparedInstruction(): string {
+  public pickPreparedInstruction(): string {
     const randomIndex = Math.floor(Math.random() * this.preparedInstructions.length);
     return this.preparedInstructions[randomIndex];
   }
   
-  private pickInstructionFromTemplate(): string {
+  public pickInstructionFromTemplate(): string {
     const randomIndex = Math.floor(Math.random() * this.instructionTemplates.length);
     const template = this.instructionTemplates[randomIndex];
     return template.replace((/\{\{\s*([\w-]+)\s*\}\}/g), (_match, key) => {

@@ -70,13 +70,14 @@ export class DiscordService {
   public async sendNextInstruction(): Promise<{ id: string; } | null> {
     const jstNow = new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
     jstNow.setUTCHours(0, 0, 0, 0);
-    const todayStartUtcString = jstNow.toISOString().replace('T', ' ').replace('Z', '');
-    const todayString = todayStartUtcString.slice(0, 10);
+    const todayStartUtcString = jstNow.toISOString().replace('T', ' ').replace('.000Z', '');  // YYYY-MM-DD HH:mm:SS
+    const todayString = todayStartUtcString.slice(0, 10);  // YYYY-MM-DD
     
     const achievement = await this.db.prepare(`
-      SELECT id, instruction
+      SELECT id, instruction, status, updated_at
       FROM achievements
       WHERE status = '未送信'
+        OR  status = '既読'
         OR (status = 'スキップ' AND updated_at < ?)
       ORDER BY RANDOM()
       LIMIT 1

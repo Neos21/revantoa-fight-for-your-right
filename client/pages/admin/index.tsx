@@ -92,7 +92,7 @@ export default function AdminIndex(): ReactElement {
       {!isEmpty(token) && (
         <>
           <h1>Admin Dashboard</h1>
-          <p><Link to="/admin/ai">AI</Link> | <Link to="/">トップ</Link></p>
+          <p><Link to="/admin/ai">AI</Link> | <Link to="/admin/instruction">指示</Link> | <Link to="/">トップ</Link></p>
           
           {achievements.length === 0 && (<p>達成状況はありません</p>)}
           {achievements.length > 0 && (

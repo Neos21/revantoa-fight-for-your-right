@@ -29,8 +29,8 @@ adminAiApi.post('/', async context => {
         content: parsed.data.prompt
       }
     ];
-    const response = await context.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast',  { messages });
-    return context.json({ result: response }, 200);
+    const result = await context.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages });
+    return context.json({ result }, 200);
   }
   catch(error) {
     return context.json({ error }, 500);

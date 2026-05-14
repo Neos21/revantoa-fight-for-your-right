@@ -1,35 +1,32 @@
 import { isHTTPError } from 'ky';
-import { useState, type ReactElement, type SubmitEvent } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { createAdminApi } from './helpers/admin-api';
 import { useAdminAuthStore } from './helpers/admin-auth-store';
 import { isEmpty } from '../../../shared/helpers/is-empty';
 
-export default function AdminAi(): ReactElement {
+import type { AdminAchievement } from '../../../shared/types/achievement';
+
+export default function AdminInstruction(): ReactElement {
   const navigate = useNavigate();
   
   const token  = useAdminAuthStore(state => state.token);
   const logout = useAdminAuthStore(state => state.logout);
   
-  const [prompt, setPrompt] = useState<string>('');
   const [answer, setAnswer] = useState<string>('');
   const [error, setError] = useState<string>('');
   
-  const onSubmit = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
+  const onFetch = async (endpoint: 'from-db' | 'from-prepared' | 'from-template'): Promise<void> => {
     setError('');
     setAnswer('');
-    
     try {
-      const result = await createAdminApi(token!).post(`/api/admin/ai`, { json: { prompt } }).json<{ result: { response: string; }; }>();
-      console.log('AI 呼び出し結果', result);
-      setAnswer(result.result.response);
+      const result = await createAdminApi(token!).get(`/api/admin/instructions/${endpoint}`).json<{ result: AdminAchievement | string | null; }>();
+      setAnswer(result.result == null ? '(Null)' : typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2));
     }
     catch(error) {
-      console.error('AI の呼び出しに失敗しました', error);
-      setError('AI の呼び出しに失敗しました');
-      
+      console.error('呼び出しに失敗しました', error);
+      setError('呼び出しに失敗しました');
       if(isHTTPError(error) && error.response.status === 401) {
         logout();
         navigate('/admin');
@@ -44,23 +41,15 @@ export default function AdminAi(): ReactElement {
       {isEmpty(token) && (<p>ログインしてください</p>)}
       
       {!isEmpty(token) && (
-        <form onSubmit={onSubmit}>
-          <p>
-            <textarea
-              required
-              rows={6}
-              value={prompt}
-              onChange={event => setPrompt(event.target.value)}
-              placeholder="プロンプト"
-            />
-          </p>
-          
-          <p><button type="submit">送信する</button></p>
+        <>
+          <p><button type="button" onClick={() => onFetch('from-db')}>DB からランダムに1つ取得する</button></p>
+          <p><button type="button" onClick={() => onFetch('from-prepared')}>用意された指示からランダムに1つ取得する</button></p>
+          <p><button type="button" onClick={() => onFetch('from-template')}>テンプレートを穴埋めしてランダムに1つ取得する</button></p>
           
           {!isEmpty(error) && (<p className="text-error">{error}</p>)}
           
           {!isEmpty(answer) && (<p className="pre-wrap">{answer}</p>)}
-        </form>
+        </>
       )}
     </main>
   );
