@@ -186,6 +186,14 @@ export default function Index(): ReactElement {
           </div>
         )}
         
+        <div className="links">
+          <a href="https://colonet.revantoa.workers.dev" target="_blank">Colonet</a>
+          <span>|</span>
+          <a href="https://key-glyph.revantoa.workers.dev" target="_blank">KeyGlyph</a>
+          <span>|</span>
+          <a href="https://cipher-feed.revantoa.workers.dev" target="_blank">CipherFeed</a>
+        </div>
+        
         <Link to="/admin" className="admin-link" tabIndex={-1}>&nbsp;</Link>
       </section>
     </main>

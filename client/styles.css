@@ -166,6 +166,26 @@ table {
     & table tbody tr td:nth-child(5) { font-weight: bold; }
     & table tbody tr td:nth-child(6) { min-width: 10rem; }
     
+    & .links {
+      margin-top: 5rem;
+      font-size: .9rem;
+      text-align: right;
+      
+      & a {
+        color: #d10076;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+      
+      & span {
+        margin: 0 .25rem;
+        opacity: .7;
+      }
+    }
+    
     & .admin-link {
       position: absolute;
       right: 0;
